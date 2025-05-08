@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import Menu, messagebox
 from gui.interfaz import RedimensionadorGUI
-
+from tkinter import messagebox
+mostrar_aviso_lote = True
 
 def crear_menu(root):
     barra_menu = Menu(root)

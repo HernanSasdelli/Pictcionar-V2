@@ -1,13 +1,26 @@
 import tkinter as tk
 from tkinter import filedialog
-from gui.eventos import mostrar_nombre
+
 from PIL import Image, ImageTk
 import os
 from gui.seleccion import registrar_imagen, eliminar_seleccionadas, imagenes_registradas, imagenes_seleccionadas
-from gui.eventos import agregar_imagen, actualizar_visibilidad_dpi
+from gui.eventos import mostrar_nombre, agregar_imagen, actualizar_visibilidad_dpi, detectar_cantidad_y_aplicar_comportamiento, guardar_imagenes_redimensionadas
+
+
 
 class RedimensionadorGUI:
     def __init__(self, master):
+        def solo_numeros(valor):
+            if valor == "":
+                return True
+            try:
+                float(valor)
+                return float(valor) > 0
+            except ValueError:
+                return False
+
+        validacion = master.register(solo_numeros)
+
         from gui.scroll import activar_scroll
         self.master = master
         self.datos_imagenes = []
@@ -42,6 +55,7 @@ class RedimensionadorGUI:
         self.frame_lateral = tk.Frame(self.frame_principal, width=120)
         self.frame_lateral.pack(side="right", fill="y", padx=(0,10), pady=10)
 
+
         self.btn_agregar = tk.Button(self.frame_lateral, text="+", font=("Arial", 14), height=2, width=4, command=lambda: agregar_imagen(self))
         self.btn_agregar.pack(pady=10)
 
@@ -68,12 +82,32 @@ class RedimensionadorGUI:
         self.frame_inferior.pack(fill="x", side="bottom", padx=10, pady=5)
 
         tk.Label(self.frame_inferior, text="Alto:").pack(side="left", padx=5)
-        self.entry_alto = tk.Entry(self.frame_inferior, width=6)
+
+        self.entry_alto = tk.Entry(
+        self.frame_inferior,
+        width=6,
+        validate="key",
+        validatecommand=(validacion, "%P")
+        )
         self.entry_alto.pack(side="left")
 
         tk.Label(self.frame_inferior, text="Ancho:").pack(side="left", padx=5)
-        self.entry_ancho = tk.Entry(self.frame_inferior, width=6)
+
+        self.entry_ancho = tk.Entry(
+        self.frame_inferior,
+        width=6,
+        validate="key",
+        validatecommand=(validacion, "%P")
+        )
         self.entry_ancho.pack(side="left")
+
+
+        self.entry_alto.bind("<FocusIn>", lambda e: self.entry_alto.config(bg="white"))
+        self.entry_ancho.bind("<FocusIn>", lambda e: self.entry_ancho.config(bg="white"))
+
+        self.entry_alto.bind("<KeyRelease>", lambda e: detectar_cantidad_y_aplicar_comportamiento(self, "alto"))
+        self.entry_ancho.bind("<KeyRelease>", lambda e: detectar_cantidad_y_aplicar_comportamiento(self, "ancho"))
+
 
 
 
@@ -94,7 +128,15 @@ class RedimensionadorGUI:
         self.label_dpi.pack_forget()
         self.entry_dpi.pack_forget()
 
-
+        self.btn_guardar = tk.Button(
+        self.frame_lateral,
+            text="💾",
+            font=("Arial", 12),
+            height=2,
+            width=4,
+            command=lambda: guardar_imagenes_redimensionadas(self)
+            )
+        self.btn_guardar.pack(pady=10)
 
         
 

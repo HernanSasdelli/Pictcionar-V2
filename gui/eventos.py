@@ -218,8 +218,7 @@ def mostrar_aviso_lote_si_corresponde(gui, campo_modificado):
         return
 
     campo = "ancho" if campo_modificado == "alto" else "alto"
-    texto = f"""Cuando seleccionás un lote de imágenes con la opción “Mantener proporciones” activada,
-el campo {campo} se calculará automáticamente según el tamaño original de cada imagen."""
+    texto = f"""“Mantener proporciones” modifica automaticamente el {campo} segun el tamaño original de cada imagen."""
 
     from tkinter import Toplevel, Label, Button, Checkbutton, IntVar
 
@@ -228,6 +227,9 @@ el campo {campo} se calculará automáticamente según el tamaño original de ca
     ventana.resizable(False, False)
     ventana.transient(gui.master)
     ventana.grab_set()
+    ventana.focus_force()
+    ventana.lift()
+
 
     # CENTRAR VENTANA respecto al master
     ventana.update_idletasks()
@@ -249,8 +251,17 @@ el campo {campo} se calculará automáticamente según el tamaño original de ca
     Button(ventana, text="Aceptar", command=cerrar, width=12).pack(pady=(10, 12))
 
 
-    
 def guardar_imagenes_redimensionadas(gui):
+    import os
+    import re
+    from tkinter import filedialog, messagebox
+    from PIL import Image
+
+    errores = []
+
+    def limpiar_nombre_archivo(nombre):
+        return re.sub(r'[\\/:*?"<>|]', "_", nombre)
+
     if not gui.datos_imagenes:
         messagebox.showwarning("Sin imágenes", "No hay imágenes para guardar.")
         return
@@ -283,23 +294,42 @@ def guardar_imagenes_redimensionadas(gui):
     nombres_usados = set()
 
     for datos in gui.datos_imagenes:
-        ruta_original = datos["ruta"]
-        nombre_base = datos.get("nombre", os.path.splitext(os.path.basename(ruta_original))[0])
-        ext = os.path.splitext(ruta_original)[1].lower()
-        img = Image.open(ruta_original)
+        try:
+            ruta_original = datos["ruta"]
+            nombre_raw = datos.get("nombre", os.path.splitext(os.path.basename(ruta_original))[0])
+            nombre_base = limpiar_nombre_archivo(nombre_raw)
+            ext = os.path.splitext(ruta_original)[1].lower()
+            img = Image.open(ruta_original)
 
-        if gui.bloquear_proporcion.get():
-            img.thumbnail((ancho, alto))
-        else:
-            img = img.resize((ancho, alto))
+            if gui.bloquear_proporcion.get():
+                img.thumbnail((ancho, alto))
+            else:
+                img = img.resize((ancho, alto))
 
-        nombre_final = nombre_base + ext
-        contador = 1
-        while nombre_final in nombres_usados or os.path.exists(os.path.join(carpeta_destino, nombre_final)):
-            nombre_final = f"{nombre_base} ({contador}){ext}"
-            contador += 1
+            nombre_final = nombre_base + ext
+            contador = 1
+            while nombre_final in nombres_usados or os.path.exists(os.path.join(carpeta_destino, nombre_final)):
+                nombre_final = f"{nombre_base} ({contador}){ext}"
+                contador += 1
 
-        img.save(os.path.join(carpeta_destino, nombre_final))
-        nombres_usados.add(nombre_final)
+            img.save(os.path.join(carpeta_destino, nombre_final))
+            nombres_usados.add(nombre_final)
 
-    messagebox.showinfo("Completado", "Todas las imágenes fueron guardadas.")
+        except Exception as e:
+            errores.append(f"{ruta_original} → {e}")
+
+    if errores:
+        ruta_log = os.path.join(carpeta_destino, "errores_guardado.txt")
+        with open(ruta_log, "w", encoding="utf-8") as f:
+            f.write("Errores al guardar imágenes:\n\n")
+            for error in errores:
+                f.write(f"{error}\n")
+
+        messagebox.showwarning(
+            "Guardado parcial",
+            f"Se guardaron {len(gui.datos_imagenes) - len(errores)} imágenes.\n"
+            f"{len(errores)} fallaron.\nRevisá el archivo:\n{ruta_log}"
+        )
+    else:
+        messagebox.showinfo("Completado", "Todas las imágenes fueron guardadas correctamente.")
+

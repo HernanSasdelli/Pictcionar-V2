@@ -1,10 +1,25 @@
 import tkinter as tk
 from tkinter import filedialog
-
 from PIL import Image, ImageTk
+
 import os
-from gui.seleccion import registrar_imagen, eliminar_seleccionadas, imagenes_registradas, imagenes_seleccionadas
-from gui.eventos import mostrar_nombre, agregar_imagen, actualizar_visibilidad_dpi, detectar_cantidad_y_aplicar_comportamiento, guardar_imagenes_redimensionadas
+
+# Selección
+from gui.seleccion import eliminar_seleccionadas, imagenes_registradas, imagenes_seleccionadas
+
+
+# Conversión y validación
+from core.conversion import cm_a_px, validar_dimension
+from core.guardado import guardar_imagenes_redimensionadas
+
+# Funciones de eventos
+from gui.eventos import (
+    agregar_imagen,
+    redimensionar_lote,
+    actualizar_visibilidad_dpi,
+    detectar_cantidad_y_aplicar_comportamiento,
+    mostrar_nombre,
+)
 
 
 

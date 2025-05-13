@@ -5,7 +5,7 @@ import os
  
 from PIL import Image, ImageTk
 from gui.seleccion import registrar_imagen
-from gui.conversion import cm_a_px, validar_dimension
+from core.conversion import cm_a_px, validar_dimension
 mostrar_aviso_lote = True
 
 
@@ -130,40 +130,6 @@ def redimensionar_lote(gui):
 
 
 
-#def ajustar_proporcion(gui):
-#   if not gui.datos_imagenes:
-#        return
-
-#    if not gui.bloquear_proporcion.get():
- #       return  # Si no está tildado, no hacemos nada
-
-    # Tomamos la proporción de la primera imagen cargada
-  #  ruta = gui.datos_imagenes[0]["ruta"]
-  #  try:
-   #     from PIL import Image
-   #     img = Image.open(ruta)
-  #      original_w, original_h = img.size
-   #     ratio = original_w / original_h
-   # except:
-   #     return
-
-  #  foco = gui.master.focus_get()
-
-   # try:
-  #      if foco == gui.entry_ancho:
-   #         ancho = float(gui.entry_ancho.get())
-   #         alto = round(ancho / ratio)
-  #         gui.entry_alto.delete(0, "end")
-   #         gui.entry_alto.insert(0, str(alto))
-    #    elif foco == gui.entry_alto:
-   #         alto = float(gui.entry_alto.get())
-    #        ancho = round(alto * ratio)
-   #         gui.entry_ancho.delete(0, "end")
-  ##          gui.entry_ancho.insert(0, str(ancho))
-   # except ValueError:
-   #     pass  # Si el valor ingresado no es válido (ej: vacío o texto), no hacemos nada
-
-
 def detectar_cantidad_y_aplicar_comportamiento(gui, campo_modificado):
     if not gui.datos_imagenes or not gui.bloquear_proporcion.get():
         return
@@ -250,86 +216,4 @@ def mostrar_aviso_lote_si_corresponde(gui, campo_modificado):
 
     Button(ventana, text="Aceptar", command=cerrar, width=12).pack(pady=(10, 12))
 
-
-def guardar_imagenes_redimensionadas(gui):
-    import os
-    import re
-    from tkinter import filedialog, messagebox
-    from PIL import Image
-
-    errores = []
-
-    def limpiar_nombre_archivo(nombre):
-        return re.sub(r'[\\/:*?"<>|]', "_", nombre)
-
-    if not gui.datos_imagenes:
-        messagebox.showwarning("Sin imágenes", "No hay imágenes para guardar.")
-        return
-
-    carpeta_destino = filedialog.askdirectory(title="Seleccionar carpeta de destino")
-    if not carpeta_destino:
-        return
-
-    try:
-        ancho = float(gui.entry_ancho.get())
-        alto = float(gui.entry_alto.get())
-    except ValueError:
-        messagebox.showerror("Error", "Medidas inválidas.")
-        return
-
-    usar_cm = gui.unidad.get() == "cm"
-    dpi = 150
-    try:
-        if usar_cm:
-            dpi = float(gui.entry_dpi.get())
-            ancho = int((ancho / 2.54) * dpi)
-            alto = int((alto / 2.54) * dpi)
-        else:
-            ancho = int(ancho)
-            alto = int(alto)
-    except:
-        messagebox.showerror("Error", "DPI o dimensiones incorrectas.")
-        return
-
-    nombres_usados = set()
-
-    for datos in gui.datos_imagenes:
-        try:
-            ruta_original = datos["ruta"]
-            nombre_raw = datos.get("nombre", os.path.splitext(os.path.basename(ruta_original))[0])
-            nombre_base = limpiar_nombre_archivo(nombre_raw)
-            ext = os.path.splitext(ruta_original)[1].lower()
-            img = Image.open(ruta_original)
-
-            if gui.bloquear_proporcion.get():
-                img.thumbnail((ancho, alto))
-            else:
-                img = img.resize((ancho, alto))
-
-            nombre_final = nombre_base + ext
-            contador = 1
-            while nombre_final in nombres_usados or os.path.exists(os.path.join(carpeta_destino, nombre_final)):
-                nombre_final = f"{nombre_base} ({contador}){ext}"
-                contador += 1
-
-            img.save(os.path.join(carpeta_destino, nombre_final))
-            nombres_usados.add(nombre_final)
-
-        except Exception as e:
-            errores.append(f"{ruta_original} → {e}")
-
-    if errores:
-        ruta_log = os.path.join(carpeta_destino, "errores_guardado.txt")
-        with open(ruta_log, "w", encoding="utf-8") as f:
-            f.write("Errores al guardar imágenes:\n\n")
-            for error in errores:
-                f.write(f"{error}\n")
-
-        messagebox.showwarning(
-            "Guardado parcial",
-            f"Se guardaron {len(gui.datos_imagenes) - len(errores)} imágenes.\n"
-            f"{len(errores)} fallaron.\nRevisá el archivo:\n{ruta_log}"
-        )
-    else:
-        messagebox.showinfo("Completado", "Todas las imágenes fueron guardadas correctamente.")
 

@@ -4,6 +4,7 @@ from tkinter import Frame
 
 imagenes_registradas = []
 imagenes_seleccionadas = set()
+
 ultima_seleccion = None
 
 def registrar_imagen(label, ruta, gui):

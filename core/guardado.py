@@ -20,10 +20,27 @@ def guardar_imagenes_redimensionadas(gui):
     carpeta_destino = filedialog.askdirectory(title="Seleccionar carpeta de destino")
     if not carpeta_destino:
         return
+    bloquear = gui.bloquear_proporcion.get()
+    ancho_val = gui.entry_ancho.get().strip()
+    alto_val = gui.entry_alto.get().strip()
 
     try:
-        ancho = float(gui.entry_ancho.get())
-        alto = float(gui.entry_alto.get())
+        if bloquear:
+            if ancho_val:
+                ancho = float(ancho_val)
+                img_ref = Image.open(gui.datos_imagenes[0]["ruta"])
+                original_w, original_h = img_ref.size
+                alto = round(ancho * original_h / original_w)
+            elif alto_val:
+                alto = float(alto_val)
+                img_ref = Image.open(gui.datos_imagenes[0]["ruta"])
+                original_w, original_h = img_ref.size
+                ancho = round(alto * original_w / original_h)
+            else:
+                raise ValueError("Ambos campos vacíos")
+        else:
+            ancho = float(ancho_val)
+            alto = float(alto_val)
     except ValueError:
         messagebox.showerror("Error", "Medidas inválidas.")
         return

@@ -1,8 +1,12 @@
-from tkinter import filedialog, Entry, Label, messagebox
+from tkinter import filedialog, Entry, messagebox
+
+
+
 import tkinter as tk
 import os
 
- 
+from core.renombrador import guardar_nombre, mostrar_nombre
+
 from PIL import Image, ImageTk
 from gui.seleccion import registrar_imagen
 from core.conversion import cm_a_px, validar_dimension
@@ -42,25 +46,7 @@ def activar_edicion_nombre(event, frame, datos_imagen, idx):
     entry.bind("<Return>", lambda e: guardar_nombre(entry, frame, datos_imagen, idx))
     entry.bind("<FocusOut>", lambda e: guardar_nombre(entry, frame, datos_imagen, idx))
 
-def guardar_nombre(entry, frame, datos_imagen, idx):
-    nuevo_nombre = entry.get().strip()
-    if nuevo_nombre:
-        datos_imagen["nombre"] = nuevo_nombre
-    entry.destroy()
-    mostrar_nombre(frame, datos_imagen, idx)
 
-def mostrar_nombre(frame, datos_imagen, idx):
-    lbl_nombre = tk.Label(
-        frame,
-        text=datos_imagen["nombre"],
-        wraplength=150,
-        justify="center",
-        bg="#ffffff",
-        font=("Arial", 9)
-    )
-    lbl_nombre.pack(pady=(2, 0))
-    from gui.eventos import activar_edicion_nombre  # para evitar import circular al definir todo junto
-    lbl_nombre.bind("<Button-1>", lambda e: activar_edicion_nombre(e, frame, datos_imagen, idx))
 
 
 #selector de medidas
@@ -84,19 +70,45 @@ def redimensionar_lote(gui):
     if not gui.datos_imagenes:
         messagebox.showinfo("Área vacía", "No hay imágenes cargadas para redimensionar.")
         return
-    if not validar_dimension(ancho_val) or not validar_dimension(alto_val):
-        print("Error: valores inválidos.")
-        return
-
-    ancho = float(ancho_val)
-    alto = float(alto_val)
-
-    if unidad == "cm":
-        ancho = cm_a_px(ancho, dpi)
-        alto = cm_a_px(alto, dpi)
-
+    
     mantener = gui.bloquear_proporcion.get()
-    foco = gui.entry_ancho if gui.entry_ancho.focus_get() else gui.entry_alto
+    print("estado ancho:", gui.entry_ancho.cget("state"))
+    print("estado alto:", gui.entry_alto.cget("state"))
+    if not ancho_val:
+        foco = gui.entry_alto
+    else:
+        foco = gui.entry_ancho
+
+
+    if mantener:
+        if foco == gui.entry_ancho and not validar_dimension(ancho_val):
+            print("Error: valores inválidos.")
+            return
+        elif foco == gui.entry_alto and not validar_dimension(alto_val):
+            print("Error: valores inválidos.")
+            return
+    else:
+        if not validar_dimension(ancho_val) or not validar_dimension(alto_val):
+            print("Error: valores inválidos.")
+            return
+
+    if mantener:
+        if foco == gui.entry_ancho:
+            ancho = float(ancho_val)
+            if unidad == "cm":
+                ancho = cm_a_px(ancho, dpi)
+        else:
+            alto = float(alto_val)
+            if unidad == "cm":
+                alto = cm_a_px(alto, dpi)
+    else:
+        ancho = float(ancho_val)
+        alto = float(alto_val)
+        if unidad == "cm":
+            ancho = cm_a_px(ancho, dpi)
+            alto = cm_a_px(alto, dpi)
+
+
 
     nuevas_imagenes = []
     for datos in gui.datos_imagenes:
@@ -140,7 +152,6 @@ def detectar_cantidad_y_aplicar_comportamiento(gui, campo_modificado):
         modo_lote_multiple(gui, campo_modificado)
 
 
-from PIL import Image
 
 def modo_imagen_unica(gui, campo_modificado):
     ruta = gui.datos_imagenes[0]["ruta"]
